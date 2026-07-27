@@ -20,8 +20,7 @@ static int RocketCollision_x(int by, int ry);
 int main() {
     int ballx = BALL_START_X, bally = BALL_START_Y;
     int rocketka_1 = RACKET_START, rocketka_2 = RACKET_START;
-    int ball_directx = 1, ball_directy = 1;
-    int chet_1 = 0, chet_2 = 0, game = 1;
+    int ball_directx = 1, ball_directy = 1, chet_1 = 0, chet_2 = 0, game = 1;
     while (game) {
         Otrisovka(ballx, bally, rocketka_1, rocketka_2, chet_1, chet_2);
         int vvod = FunctionInput();
