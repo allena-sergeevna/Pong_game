@@ -9,35 +9,32 @@
 #define RACKET_START 13
 #define WIN_SCORE 21
 
-int FunctionInput();
-void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1,
-               int chet_2);
-int DvijenieRocket_1(char deystvie, int p_r1);
-int DvijenieRocket_2(char deystvie, int p_r2);
-int DvijenieBall_x(int bx, int dirx);
-int DvijenieBall_y(int by, int diry);
-int WallCollision(int y, int bdir);
-int RocketCollision_x(int by, int ry);
+static int FunctionInput();
+static void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1, int chet_2);
+static int DvijenieRocket(char deystvie, int pos, char up, char down);
+static int DvijenieBall_x(int bx, int dirx);
+static int DvijenieBall_y(int by, int diry);
+static int WallCollision(int y, int bdir);
+static int RocketCollision_x(int by, int ry);
 
 int main() {
     int ballx = BALL_START_X, bally = BALL_START_Y;
     int rocketka_1 = RACKET_START, rocketka_2 = RACKET_START;
     int ball_directx = 1, ball_directy = 1;
-    int chet_1 = 0, chet_2 = 0;
-    int game = 1;
+    int chet_1 = 0, chet_2 = 0, game = 1;
     while (game) {
         Otrisovka(ballx, bally, rocketka_1, rocketka_2, chet_1, chet_2);
         int vvod = FunctionInput();
-        rocketka_1 = DvijenieRocket_1(vvod, rocketka_1);
-        rocketka_2 = DvijenieRocket_2(vvod, rocketka_2);
+        rocketka_1 = DvijenieRocket(vvod, rocketka_1, 'A', 'Z');
+        rocketka_2 = DvijenieRocket(vvod, rocketka_2, 'K', 'M');
         ball_directy = WallCollision(bally, ball_directy);
         if (bally <= 0)
             bally = 0;
         else if (bally >= BOARD_WIDTH - 1) {
             bally = BOARD_WIDTH - 1;
         }
-        if (ballx == 74 || ballx == 6) {
-            int current_rocket = (ballx == 74) ? rocketka_2 : rocketka_1;
+        if (ballx == RACKET_RIGHT_X || ballx == RACKET_LEFT_X + 1) {
+            int current_rocket = (ballx == RACKET_RIGHT_X) ? rocketka_2 : rocketka_1;
             ball_directx *= RocketCollision_x(bally, current_rocket);
             if (bally < current_rocket) {
                 ball_directy = -1;
@@ -46,16 +43,17 @@ int main() {
             }
         }
         if (ballx == 1 || ballx == 79) {
-            if (ballx == 1)
+            if (ballx == 1) {
                 chet_2 = chet_2 + 1;
-            else {
+                ball_directx = -1;
+            } else {
                 chet_1 = chet_1 + 1;
+                ball_directx = 1;
             }
             ballx = BALL_START_X;
             bally = BALL_START_Y;
             rocketka_1 = RACKET_START;
             rocketka_2 = RACKET_START;
-            ball_directx = (ballx == 1) ? 1 : -1;
             ball_directy = 1;
         }
         if (chet_1 >= WIN_SCORE) {
@@ -71,8 +69,9 @@ int main() {
     }
     return 0;
 }
-void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1,
-               int chet_2) {
+
+static void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1,
+                      int chet_2) {
     char ball = 'O';
     char toe = '|';
     char space = ' ';
@@ -86,12 +85,10 @@ void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1,
         for (int j = 0; j < BOARD_LENGTH; j++) {
             if (i == bally && j == ballx) {
                 printf("%c", ball);
-            } else if ((i == rocketka_1 - 1 || i == rocketka_1 ||
-                        i == rocketka_1 + 1) &&
+            } else if ((i == rocketka_1 - 1 || i == rocketka_1 || i == rocketka_1 + 1) &&
                        j == RACKET_LEFT_X) {
                 printf("%c", rocket);
-            } else if ((i == rocketka_2 - 1 || i == rocketka_2 ||
-                        i == rocketka_2 + 1) &&
+            } else if ((i == rocketka_2 - 1 || i == rocketka_2 || i == rocketka_2 + 1) &&
                        j == RACKET_RIGHT_X) {
                 printf("%c", rocket);
             } else if (j == BOARD_LENGTH / 2) {
@@ -113,10 +110,9 @@ void Otrisovka(int ballx, int bally, int rocketka_1, int rocketka_2, int chet_1,
     printf("Player 2: %d\n", chet_2);
 }
 
-int FunctionInput() {
+static int FunctionInput() {
     int vvod;
-    while ((vvod = getchar()) != 'A' && vvod != 'Z' && vvod != 'K' &&
-           vvod != 'M' && vvod != ' ') {
+    while ((vvod = getchar()) != 'A' && vvod != 'Z' && vvod != 'K' && vvod != 'M' && vvod != ' ') {
         while (getchar() != '\n') {
         }
     }
@@ -125,44 +121,27 @@ int FunctionInput() {
     return vvod;
 }
 
-int DvijenieRocket_1(char deystvie, int p_r1) {
-    if (deystvie == 'A') {
-        if (p_r1 > 1) {
-            p_r1 = p_r1 - 1;
-        }
-    } else if (deystvie == 'Z') {
-        if (p_r1 < BOARD_WIDTH - 2) {
-            p_r1 = p_r1 + 1;
-        }
+static int DvijenieRocket(char deystvie, int pos, char up, char down) {
+    if (deystvie == up) {
+        if (pos > 1) pos--;
+    } else if (deystvie == down) {
+        if (pos < BOARD_WIDTH - 2) pos++;
     }
-    return p_r1;
+    return pos;
 }
 
-int DvijenieRocket_2(char deystvie, int p_r2) {
-    if (deystvie == 'K') {
-        if (p_r2 > 1) {
-            p_r2 = p_r2 - 1;
-        }
-    } else if (deystvie == 'M') {
-        if (p_r2 < BOARD_WIDTH - 2) {
-            p_r2 = p_r2 + 1;
-        }
-    }
-    return p_r2;
-}
+static int DvijenieBall_x(int bx, int dirx) { return bx + dirx; }
 
-int DvijenieBall_x(int bx, int dirx) { return bx + dirx; }
+static int DvijenieBall_y(int by, int diry) { return by + diry; }
 
-int DvijenieBall_y(int by, int diry) { return by + diry; }
-
-int WallCollision(int y, int bdir) {
+static int WallCollision(int y, int bdir) {
     if (y <= 0 || y >= BOARD_WIDTH - 1) {
         bdir = -bdir;
     }
     return bdir;
 }
 
-int RocketCollision_x(int by, int ry) {
+static int RocketCollision_x(int by, int ry) {
     int bdir = 1;
     if (by >= (ry - 1) && by <= (ry + 1)) {
         bdir = -1;
